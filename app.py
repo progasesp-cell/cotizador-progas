@@ -21,13 +21,13 @@ EMAIL_REMITENTE = "progas.esp@gmail.com"
 CONTRASENA_APP = "oyjy rvqa fkdn tvds"
 
 OPERARIOS = [
-    "Luis Villalba - Gerente",
-    "Osaris - Subgerente",
-    "Guillermo - Técnico",
+    "Luis Villalba - Subgerente",
+    "Osaris Cruz - Gerente",
+    "Guillermo Solo - Técnico",
     "Gustavo Vidal - Analista"
 ]
 
-st.set_page_config(page_title="Sistema de Cotizaciones PROGAS", page_icon="📋", layout="centered")
+st.set_page_config(page_title="Sistema de Cotizaciones PROGAS SAS ESP", page_icon="📋", layout="centered")
 
 # ============================================================
 # FUNCIONES
