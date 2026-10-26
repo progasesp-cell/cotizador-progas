@@ -133,29 +133,29 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         return False
 
 def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets usando base64"""
+    """Guarda la cotización en Google Sheets"""
     try:
-        import json, tempfile, os, base64
+        import json, tempfile, os
         
-        # Clave privada codificada en base64 (REEMPLAZA CON TU CLAVE CODIFICADA)
-        private_key_b64 = "PEGA_AQUI_TU_CLAVE_PRIVADA_CODIFICADA_EN_BASE64"
+        # Contenido completo del archivo credenciales.json
+        creds_json = """{
+  "type": "service_account",
+  "project_id": "cotizacion-progas",
+  "private_key_id": "6a5e5f899f17945527146266dff30a765cf239a4",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2wR0Sn+hQtqA\nwzOWgP+l4qbI8v/QkH+lwE6VqSBgTx48XbvAF8Xe+w/UAZ6vs1kKBR075Xz5a5tq\nB9va8Vc47Meoaz9ONL82K0q8H+TviWb4p9O41hkiz1xcVfp2/8zhtB1WvFLScYiQ\nv5x/6vOynTNVl5dNeEW9449sDrZK9v0SzUjGU7Xpqe8+s6u2t+Xmkl3fcXNiOn/E\n3aP2T6myRDeCPAGRYarr+QEqmaBN8nL8X4VbDLTbTJWw9YBwpLUCr8mb5ggoq9Z6\nKahajl8ymAXTImyZMM2P1ziwsFlEipbJEBUcBcZh6bnB3FTooX1zb2/Q2d45mkg9\n9DuoVNjrAgMBAAECggEABIbpBGtVlcUKZwVE62FTqSHHrmCWu9YyFgKTpR82HQhd\nwndLE/BV6pWcR6ybuBYja68u+NbbbFjsJcw0xjJWS/NNGHsJbY+TTzpO0JEWYfim\nTPacPKEY46l3yZ2m9UAZF3m5emf8pkitE75LYLhlOcQG0CcFZdtWFRWM/6Ebrvn8\nBG9UcMF/dNUZRK5BsKldtWfw5BQ1AsgrQLBA37A2Eagjl33tER27nygTt7T08w8W\nivyshD9YsgQzo+VUecbwBro0ktyraSzrR0CujET/IB2S3Jxr26FGDPkrwU9OxasN\nthykcd079iWji0LvY9d9hBOt4RZ8iZMRmBlNH733TQKBgQDn4GLJJZa3tNJkYuS9\nms2K9UxKsndJmS7bBUskLCO07tDH4ztxJI6VGqSs8AU/m0JBbnCBqls0JQ7BAage\nhKHmPAQ7Lh3sShCnmrSF3ZTrNbUNK+zaLWfr84YnTrO4Gw+M1ZxZasvpnCiXPN1z\n7f/M+OZz/t7825wsbirx+RVvVQKBgQDcpc99HNNf7YZjUdhZ0TxKbT0Obg9Fz2Uj\nb7o848QC7VHwKLMJ0lhY1ULu89h3zauFF8TZoFWY9u1xVmj/FyNZIzwwWLN0RrVR\nKRmZUE10JBWWwbewlzgUWqlojxJB+XvV7d9q5iMLAlpSkEtrfmcq59V44rsNgOUp\nJcUcUranPwKBgFoP9m6oUe0Sp7FkE/JtIS667iIJRXnprKBXYwMuvcO2CpPI97qP\nd24EhjfBllhJRqfBbKOAdqI/Toa6zQDlhTi20PHnjKnNbsCav0lLcl8VYjg2em2X\nu0iTMuUrlXSJ1jVedrboW0FmbQGpG16+718+wcwGD7ho2DUNqVKI68FtAoGAFd+2\nNyABcHQaq4P0n8rXYEV+FQ0iJHiP/ThZTSoDR4sBYX6XaTTaH0xdC1VPM2lHRLV7\nhVuYwMZR+bdoR0mi7nZIxD425CMSXI5nhERquUXOghiIPlBvdc0bGEt+st2pwiaH\nzJAuDyxXifHWGDz6u00qY4aOpqMNlMuyw8ELbH8CgYEAzGKYXBQWBNGSqxJxkJ4i\ngHu81ooBG4A9X09X/0/fSKJ2Zsc/Q62jPTveGAar7M7Xq4RUQD2OFhkXv4z73iXl\nkPGORbP7d+wbEejpysEGjCh8LOfipi9KJeLo2GMdp+ZzrJ2JB8BiOLEemhxVeURk\nI7SWvHlmx5pP0nogJjpbmhA=\n-----END PRIVATE KEY-----\n",
+  "client_email": "cotizacion-progas@cotizacion-progas.iam.gserviceaccount.com",
+  "client_id": "110778774957758293885",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/cotizacion-progas%40cotizacion-progas.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}"""
         
-        # Decodificar la clave
-        private_key = base64.b64decode(private_key_b64).decode('utf-8')
+        # Parsear el JSON
+        creds_dict = json.loads(creds_json)
         
-        creds_dict = {
-            "type": "service_account",
-            "project_id": "cotizacion-progas",
-            "private_key_id": "6a5e5f899f17945527146266dff30a765cf239a4",
-            "private_key": "Ii0tLS0tQkVHSU4gUFJJVkFURSBLRVktLS0tLVxuTUlJRXZRSUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS2N3Z2dTakFnRUFBb0lCQVFESDJ3UjBTbitoUXRxQVxud3pPV2dQK2w0cWJJOHYvUWtIK2x3RTZWcVNCZ1R4NDhYYnZBRjhYZSt3L1VBWjZ2czFrS0JSMDc1WHo1YTV0cVxuQjl2YThWYzQ3TWVvYXo5T05MODJLMHE4SCtUdmlXYjRwOU80MWhraXoxeGNWZnAyLzh6aHRCMVd2RkxTY1lpUVxudjV4LzZ2T3luVE5WbDVkTmVFVzk0NDlzRHJaSzl2MFN6VWpHVTdYcHFlOCtzNnUydCtYbWtsM2ZjWE5pT24vRVxuM2FQMlQ2bXlSRGVDUEFHUllhcnIrUUVxbWFCTjhuTDhYNFZiRExUYlRKV3c5WUJ3cExVQ3I4bWI1Z2dvcTlaNlxuS2FoYWpsOHltQVhUSW15Wk1NMlAxeml3c0ZsRWlwYkpFQlVjQmNaaDZibkIzRlRvb1gxemIyL1EyZDQ1bWtnOVxuOUR1b1ZOanJBZ01CQUFFQ2dnRUFCSWJwQkd0VmxjVUtad1ZFNjJGVHFTSEhybUNXdTlZeUZnS1RwUjgySFFoZFxud25kTEUvQlY2cFdjUjZ5YnVCWWphNjh1K05iYmJGanNKY3cweGpKV1MvTk5HSHNKYlkrVFR6cE8wSkVXWWZpbVxuVFBhY1BLRVk0NmwzeVoybTlVQVpGM201ZW1mOHBraXRFNzVMWUxobE9jUUcwQ2NGWmR0V0ZSV00vNkVicnZuOFxuQkc5VWNNRi9kTlVaUks1QnNLbGR0V2Z3NUJRMUFzZ3JRTEJBMzdBMkVhZ2psMzN0RVIyN255Z1R0N1QwOHc4V1xuaXZ5c2hEOVlzZ1F6bytWVWVjYndCcm8wa3R5cmFTenJSMEN1akVUL0lCMlMzSnhyMjZGR0RQa3J3VTlPeGFzTlxudGh5a2NkMDc5aVdqaTBMdlk5ZDloQk90NFJaOGlaTVJtQmxOSDczM1RRS0JnUURuNEdMSkpaYTN0TkprWXVTOVxubXMySzlVeEtzbmRKbVM3YkJVc2tMQ08wN3RESDR6dHhKSTZWR3FTczhBVS9tMEpCYm5DQnFsczBKUTdCQWFnZVxuaEtIbVBBUTdMaDNzU2hDbm1yU0YzWlRyTmJVTksremFMV2ZyODRZblRyTzRHdytNMVp4WmFzdnBuQ2lYUE4xelxuN2YvTStPWnovdDc4MjV3c2JpcngrUlZ2VlFLQmdRRGNwYzk5SE5OZjdZWmpVZGhaMFR4S2JUME9iZzlGejJValxuYjdvODQ4UUM3Vkh3S0xNSjBsaFkxVUx1ODloM3phdUZGOFRab0ZXWTl1MXhWbWovRnlOWkl6d3dXTE4wUnJWUlxuS1JtWlVFMTBKQldXd2Jld2x6Z1VXcWxvanhKQitYdlY3ZDlxNWlNTEFscFNrRXRyZm1jcTU5VjQ0cnNOZ09VcFxuSmNVY1VyYW5Qd0tCZ0ZvUDltNm9VZTBTcDdGa0UvSnRJUzY2N2lJSlJYbnByS0JYWXdNdXZjTzJDcFBJOTdxUFxuZDI0RWhqZkJsbGhKUnFmQmJLT0FkcUkvVG9hNnpRRGxoVGkyMFBIbmpLbk5ic0NhdjBsTGNsOFZZamcyZW0yWFxudTBpVE11VXJsWFNKMWpWZWRyYm9XMEZtYlFHcEcxNis3MTgrd2N3R0Q3aG8yRFVOcVZLSTY4RnRBb0dBRmQrMlxuTnlBQmNIUWFxNFAwbjhyWFlFVitGUTBpSkhpUC9UaFpUU29EUjRzQllYNlhhVFRhSDB4ZEMxVlBNMmxIUkxWN1xuaFZ1WXdNWlIrYmRvUjBtaTduWkl4RDQyNUNNU1hJNW5oRVJxdVVYT2doaUlQbEJ2ZGMwYkdFdCtzdDJwd2lhSFxuekpBdUR5eFhpZkhXR0R6NnUwMHFZNGFPcHFNTmxNdXl3OEVMYkg4Q2dZRUF6R0tZWEJRV0JOR1NxeEp4a0o0aVxuZ0h1ODFvb0JHNEE5WDA5WC8wL2ZTS0oyWnNjL1E2MmpQVHZlR0FhcjdNN1hxNFJVUUQyT0Zoa1h2NHo3M2lYbFxua1BHT1JiUDdkK3diRWVqcHlzRUdqQ2g4TE9maXBpOUtKZUxvMkdNZHArWnpySjJKQjhCaU9MRWVtaHhWZVVSa1xuSTdTV3ZIbG14NXBQMG5vZ0pqcGJtaEE9XG4tLS0tLUVORCBQUklWQVRFIEtFWS0tLS0tXG4iLA==",
-            "client_email": "cotizacion-progas@cotizacion-progas.iam.gserviceaccount.com",
-            "client_id": "110778774957758293885",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/cotizacion-progas%40cotizacion-progas.iam.gserviceaccount.com"
-        }
-        
+        # Crear archivo temporal
         with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
             json.dump(creds_dict, f)
             ruta_credenciales = f.name
@@ -188,8 +188,7 @@ def guardar_en_sheets(cotizacion, lista_items, total):
         return True
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
-        return False
-# ============================================================
+        return False# ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
 if 'lista_items' not in st.session_state:
