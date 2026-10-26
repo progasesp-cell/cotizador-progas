@@ -12,6 +12,9 @@ from fpdf import FPDF
 from datetime import datetime
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import json
+import tempfile
+import os
 
 # ============================================================
 # CONFIGURACIÓN
@@ -132,8 +135,6 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
 def guardar_en_sheets(cotizacion, lista_items, total):
     """Guarda la cotización en Google Sheets"""
     try:
-        import json, tempfile, os
-        
         # Credenciales hardcodeadas
         creds_dict = {
             "type": "service_account",
@@ -203,50 +204,7 @@ def guardar_en_sheets(cotizacion, lista_items, total):
     except Exception as e:
         st.error(f" Error al guardar en Google Sheets: {e}")
         return False
-        
-        # GUARDAR EN HOJA "Cotizaciones"
-        try:
-            hoja_cotizaciones = spreadsheet.worksheet('Cotizaciones')
-        except gspread.WorksheetNotFound:
-            hoja_cotizaciones = spreadsheet.add_worksheet(title='Cotizaciones', rows=100, cols=10)
-            hoja_cotizaciones.append_row(['Número', 'Fecha', 'Cliente', 'Correo', 'Operario', 'Total', 'Estado'])
-        
-        hoja_cotizaciones.append_row([
-            cotizacion['numero'],
-            cotizacion['fecha'],
-            cotizacion['cliente'],
-            cotizacion['correo'],
-            cotizacion['operario'],
-            f"${total:,.0f}",
-            'Guardada'
-        ])
-        
-        # GUARDAR EN HOJA "Detalle_Cotizaciones"
-        try:
-            hoja_detalle = spreadsheet.worksheet('Detalle_Cotizaciones')
-        except gspread.WorksheetNotFound:
-            hoja_detalle = spreadsheet.add_worksheet(title='Detalle_Cotizaciones', rows=500, cols=10)
-            hoja_detalle.append_row(['Número_Cotizacion', 'Código', 'Producto', 'Cantidad', 'Precio', 'Subtotal'])
-        
-        for item in lista_items:
-            hoja_detalle.append_row([
-                cotizacion['numero'],
-                item['codigo'],
-                item['producto'],
-                item['cantidad'],
-                f"${item['precio']:,.0f}",
-                f"${item['subtotal']:,.0f}"
-            ])
-        
-        # Limpiar archivo temporal
-        if 'credentials' in st.secrets and os.path.exists(ruta_credenciales):
-            os.unlink(ruta_credenciales)
-        
-        return True
-    except Exception as e:
-        st.error(f"❌ Error al guardar en Google Sheets: {e}")
-        return False
-        
+
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
@@ -263,7 +221,7 @@ st.markdown("---")
 
 df_servicios = cargar_servicios()
 if df_servicios.empty:
-    st.error("️ No se pudo cargar la lista de servicios.")
+    st.error(" No se pudo cargar la lista de servicios.")
     st.stop()
 
 col_codigo = None
@@ -278,7 +236,7 @@ for col in df_servicios.columns:
         col_precio = col
 
 if not col_codigo or not col_producto or not col_precio:
-    st.error(f"❌ No se encontraron las columnas necesarias.")
+    st.error(f" No se encontraron las columnas necesarias.")
     st.info(f"**Columnas detectadas:** {list(df_servicios.columns)}")
     st.stop()
 
@@ -325,9 +283,9 @@ with st.form("form_agregar_item", clear_on_submit=True):
 
     if btn_agregar:
         if seleccion == "-- Selecciona un producto/servicio --":
-            st.warning("⚠️ Debes seleccionar un producto/servicio primero.")
+            st.warning(" Debes seleccionar un producto/servicio primero.")
         elif cantidad == 0:
-            st.warning("⚠️ Debes ingresar una cantidad mayor a 0.")
+            st.warning(" Debes ingresar una cantidad mayor a 0.")
         else:
             partes = seleccion.split(" - ")
             codigo_sel, producto_sel = partes[0], partes[1]
@@ -341,7 +299,7 @@ with st.form("form_agregar_item", clear_on_submit=True):
                 'precio': precio_exacto, 
                 'subtotal': precio_exacto * cantidad
             })
-            st.success(f"✅ Agregado: {producto_sel} x{cantidad} = ${precio_exacto * cantidad:,.0f}")
+            st.success(f" Agregado: {producto_sel} x{cantidad} = ${precio_exacto * cantidad:,.0f}")
             st.rerun()
 
     if btn_finalizar:
@@ -358,7 +316,7 @@ with st.form("form_agregar_item", clear_on_submit=True):
                 'precio': precio_exacto, 
                 'subtotal': precio_exacto * cantidad
             })
-            st.success(f"✅ Agregado: {producto_sel} x{cantidad} = ${precio_exacto * cantidad:,.0f}")
+            st.success(f" Agregado: {producto_sel} x{cantidad} = ${precio_exacto * cantidad:,.0f}")
             st.rerun()
 
 # ============================================================
@@ -372,7 +330,7 @@ if len(st.session_state.lista_items) == 0:
 else:
     st.markdown("""
     <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-        <h2 style='color: #0e1117; margin: 0;'>📄 PROGAS SAS ESP</h2>
+        <h2 style='color: #0e1117; margin: 0;'> PROGAS SAS ESP</h2>
         <p style='margin: 5px 0; color: #555;'>Empresa de Servicios Públicos</p>
         <p style='margin: 5px 0; color: #555;'>NIT: 9018087574</p>
     </div>
@@ -455,7 +413,7 @@ else:
 if st.session_state.get('accion') in ['generar_pdf', 'enviar_correo']:
     
     if not cliente or not correo:
-        st.error("❌ Debes llenar el nombre del cliente y el correo.")
+        st.error(" Debes llenar el nombre del cliente y el correo.")
         if st.button("🔙 Volver"):
             st.session_state.accion = None
             st.rerun()
@@ -476,7 +434,7 @@ if st.session_state.get('accion') in ['generar_pdf', 'enviar_correo']:
                 st.download_button(label="⬇️ Descargar PDF", data=f, file_name=archivo_pdf, mime="application/pdf")
             
             if st.session_state.accion == 'enviar_correo':
-                with st.spinner("📧 Enviando correo y guardando en Google Sheets..."):
+                with st.spinner(" Enviando correo y guardando en Google Sheets..."):
                     asunto = f"Cotización {numero_cot} - {cliente}"
                     cuerpo = f"""Hola {cliente},
 
