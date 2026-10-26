@@ -129,32 +129,25 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         st.error(f"Error al enviar correo: {e}")
         return False
 
-def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets usando Secrets de Streamlit Cloud"""
-    try:
-        import json
-        import tempfile
-        import os
-        
-        # Obtener credenciales desde Secrets de Streamlit Cloud
-        if 'credentials' in st.secrets:
-            creds_dict = dict(st.secrets['credentials'])
-            
-            # La private_key necesita formato especial (saltos de línea reales)
-            if 'private_key' in creds_dict:
-                creds_dict['private_key'] = creds_dict['private_key'].replace('\\n', '\n')
-            
-            # Crear archivo temporal con las credenciales
-            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-                json.dump(creds_dict, f)
-                ruta_credenciales = f.name
-        else:
-            # Si no hay secrets, usar archivo local (para pruebas en PC)
-            ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
-            if not os.path.exists(ruta_credenciales):
-                st.error(f"❌ No se encontró credenciales.json ni Secrets configurados")
-                return False
-        
+# Credenciales hardcodeadas (REEMPLAZA LOS VALORES)
+creds_dict = {
+    "type": "service_account",
+    "project_id": "cotizacion-progas",
+    "private_key_id": "6a5e5f899f17945527146266dff30a765cf239a4",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2wR0Sn+hQtqA\nwzOWgP+l4qbI8v/QkH+lwE6VqSBgTx48XbvAF8Xe+w/UAZ6vs1kKBR075Xz5a5tq\nB9va8Vc47Meoaz9ONL82K0q8H+TviWb4p9O41hkiz1xcVfp2/8zhtB1WvFLScYiQ\nv5x/6vOynTNVl5dNeEW9449sDrZK9v0SzUjGU7Xpqe8+s6u2t+Xmkl3fcXNiOn/E\n3aP2T6myRDeCPAGRYarr+QEqmaBN8nL8X4VbDLTbTJWw9YBwpLUCr8mb5ggoq9Z6\nKahajl8ymAXTImyZMM2P1ziwsFlEipbJEBUcBcZh6bnB3FTooX1zb2/Q2d45mkg9\n9DuoVNjrAgMBAAECggEABIbpBGtVlcUKZwVE62FTqSHHrmCWu9YyFgKTpR82HQhd\nwndLE/BV6pWcR6ybuBYja68u+NbbbFjsJcw0xjJWS/NNGHsJbY+TTzpO0JEWYfim\nTPacPKEY46l3yZ2m9UAZF3m5emf8pkitE75LYLhlOcQG0CcFZdtWFRWM/6Ebrvn8\nBG9UcMF/dNUZRK5BsKldtWfw5BQ1AsgrQLBA37A2Eagjl33tER27nygTt7T08w8W\nivyshD9YsgQzo+VUecbwBro0ktyraSzrR0CujET/IB2S3Jxr26FGDPkrwU9OxasN\nthykcd079iWji0LvY9d9hBOt4RZ8iZMRmBlNH733TQKBgQDn4GLJJZa3tNJkYuS9\nms2K9UxKsndJmS7bBUskLCO07tDH4ztxJI6VGqSs8AU/m0JBbnCBqls0JQ7BAage\nhKHmPAQ7Lh3sShCnmrSF3ZTrNbUNK+zaLWfr84YnTrO4Gw+M1ZxZasvpnCiXPN1z\n7f/M+OZz/t7825wsbirx+RVvVQKBgQDcpc99HNNf7YZzUdhZ0TxKbT0Obg9Fz2Uj\nb7o848QC7VHwKLMJ0lhY1ULu89h3zauFF8TZoFWY9u1xVmj/FyNZIzwwWLN0RrVR\nKRmZUE10JBWWwbewlzgUWqlojxJB+XvV7d9q5iMLAlpSkEtrfmcq59V44rsNgOUp\nJcUcUranPwKBgFoP9m6oUe0Sp7FkE/JtIS667iIJRXnprKBXYwMuvcO2CpPI97qP\nd24EhjfBllhJRqfBbKOAdqI/Toa6zQDlhTi20PHnjKnNbsCav0lLcl8VYjg2em2X\nu0iTMuUrlXSJ1jVedrboW0FmbQGpG16+718+wcwGD7ho2DUNqVKI68FtAoGAFd+2\nNyABcHQaq4P0n8rXYEV+FQ0iJHiP/ThZTSoDR4sBYX6XaTTaH0xdC1VPM2lHRLV7\nhVuYwMZR+bdoR0mi7nZIxD425CMSXI5nhERquUXOghiIPlBvdc0bGEt+st2pwiaH\nzJAuDyxXifHWGDz6u00qY4aOpqMNlMuyw8ELbH8CgYEAzGKYXBQWBNGSqxJxkJ4i\ngHu81ooBG4A9X09X/0/fSKJ2Zsc/Q62jPTveGAar7M7Xq4RUQD2OFhkXv4z73iXl\nkPGORbP7d+wbEejpysEGjCh8LOfipi9KJeLo2GMdp+ZzrJ2JB8BiOLEemhxVeURk\nI7SWvHlmx5pP0nogJjpbmhA=\n-----END PRIVATE KEY-----\n",
+    "client_email": "cotizacion-progas@cotizacion-progas.iam.gserviceaccount.com",
+    "client_id": "110778774957758293885",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/cotizacion-progas%40cotizacion-progas.iam.gserviceaccount.com"
+}
+
+# Crear archivo temporal con las credenciales
+with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+    json.dump(creds_dict, f)
+    ruta_credenciales = f.name
+    
         # Configurar credenciales
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
         creds = ServiceAccountCredentials.from_json_keyfile_name(ruta_credenciales, scope)
@@ -411,83 +404,6 @@ else:
         if st.button(" Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
             st.session_state.accion = "enviar_correo"
             st.rerun()
-
-# ============================================================
-# FUNCIÓN PARA GUARDAR EN GOOGLE SHEETS
-# ============================================================
-def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets"""
-    try:
-        import os
-        
-        # Obtener ruta absoluta del archivo de credenciales
-        ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
-        
-        # Verificar que el archivo existe
-        if not os.path.exists(ruta_credenciales):
-            st.error(f"❌ No se encontró el archivo credenciales.json en: {ruta_credenciales}")
-            return False
-        
-        # Configurar credenciales
-        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        creds = ServiceAccountCredentials.from_json_keyfile_name(ruta_credenciales, scope)
-        client = gspread.authorize(creds)
-        
-        # Abrir el spreadsheet por NOMBRE
-        try:
-            spreadsheet = client.open('Sistema de Cotizaciones')
-        except gspread.SpreadsheetNotFound:
-            st.error("❌ No se encontró el Google Sheet 'Sistema de Cotizaciones'")
-            st.error("Verifica que:")
-            st.error("1. El nombre del documento sea exactamente: Sistema de Cotizaciones")
-            st.error("2. El Google Sheet esté compartido con la cuenta de servicio")
-            return False
-        
-        # ==========================================
-        # GUARDAR EN HOJA "Cotizaciones"
-        # ==========================================
-        try:
-            hoja_cotizaciones = spreadsheet.worksheet('Cotizaciones')
-        except gspread.WorksheetNotFound:
-            st.info("📝 Creando hoja 'Cotizaciones'...")
-            hoja_cotizaciones = spreadsheet.add_worksheet(title='Cotizaciones', rows=100, cols=10)
-            hoja_cotizaciones.append_row(['Número', 'Fecha', 'Cliente', 'Correo', 'Operario', 'Total', 'Estado'])
-        
-        hoja_cotizaciones.append_row([
-            cotizacion['numero'],
-            cotizacion['fecha'],
-            cotizacion['cliente'],
-            cotizacion['correo'],
-            cotizacion['operario'],
-            f"${total:,.0f}",
-            'Guardada'
-        ])
-        
-        # ==========================================
-        # GUARDAR EN HOJA "Detalle_Cotizaciones"
-        # ==========================================
-        try:
-            hoja_detalle = spreadsheet.worksheet('Detalle_Cotizaciones')
-        except gspread.WorksheetNotFound:
-            st.info("📝 Creando hoja 'Detalle_Cotizaciones'...")
-            hoja_detalle = spreadsheet.add_worksheet(title='Detalle_Cotizaciones', rows=500, cols=10)
-            hoja_detalle.append_row(['Número_Cotizacion', 'Código', 'Producto', 'Cantidad', 'Precio', 'Subtotal'])
-        
-        for item in lista_items:
-            hoja_detalle.append_row([
-                cotizacion['numero'],
-                item['codigo'],
-                item['producto'],
-                item['cantidad'],
-                f"${item['precio']:,.0f}",
-                f"${item['subtotal']:,.0f}"
-            ])
-        
-        return True
-    except Exception as e:
-        st.error(f"❌ Error al guardar en Google Sheets: {e}")
-        return False
-
 
 # ============================================================
 # SECCIÓN 4: GENERAR PDF Y ENVIAR
