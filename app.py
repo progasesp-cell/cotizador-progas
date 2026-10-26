@@ -130,15 +130,47 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         return False
 
 def guardar_en_sheets(cotizacion, lista_items, total):
+    """Guarda la cotización en Google Sheets usando Secrets de Streamlit Cloud"""
     try:
-        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        creds = ServiceAccountCredentials.from_json_keyfile_name('credenciales.json', scope)
-        client = gspread.authorize(creds)
-        spreadsheet = client.open_by_key('1v_dyEtwFsftiXli8lB-zoBEDl4uoH4pbbeAlyPjBtI')
+        import json
+        import tempfile
+        import os
         
+        # Obtener credenciales desde Secrets de Streamlit Cloud
+        if 'credentials' in st.secrets:
+            creds_dict = dict(st.secrets['credentials'])
+            
+            # La private_key necesita formato especial (saltos de línea reales)
+            if 'private_key' in creds_dict:
+                creds_dict['private_key'] = creds_dict['private_key'].replace('\\n', '\n')
+            
+            # Crear archivo temporal con las credenciales
+            with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+                json.dump(creds_dict, f)
+                ruta_credenciales = f.name
+        else:
+            # Si no hay secrets, usar archivo local (para pruebas en PC)
+            ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
+            if not os.path.exists(ruta_credenciales):
+                st.error(f"❌ No se encontró credenciales.json ni Secrets configurados")
+                return False
+        
+        # Configurar credenciales
+        scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
+        creds = ServiceAccountCredentials.from_json_keyfile_name(ruta_credenciales, scope)
+        client = gspread.authorize(creds)
+        
+        # Abrir el spreadsheet por NOMBRE
+        try:
+            spreadsheet = client.open('Sistema de Cotizaciones')
+        except gspread.SpreadsheetNotFound:
+            st.error("❌ No se encontró el Google Sheet 'Sistema de Cotizaciones'")
+            return False
+        
+        # GUARDAR EN HOJA "Cotizaciones"
         try:
             hoja_cotizaciones = spreadsheet.worksheet('Cotizaciones')
-        except:
+        except gspread.WorksheetNotFound:
             hoja_cotizaciones = spreadsheet.add_worksheet(title='Cotizaciones', rows=100, cols=10)
             hoja_cotizaciones.append_row(['Número', 'Fecha', 'Cliente', 'Correo', 'Operario', 'Total', 'Estado'])
         
@@ -152,9 +184,10 @@ def guardar_en_sheets(cotizacion, lista_items, total):
             'Guardada'
         ])
         
+        # GUARDAR EN HOJA "Detalle_Cotizaciones"
         try:
             hoja_detalle = spreadsheet.worksheet('Detalle_Cotizaciones')
-        except:
+        except gspread.WorksheetNotFound:
             hoja_detalle = spreadsheet.add_worksheet(title='Detalle_Cotizaciones', rows=500, cols=10)
             hoja_detalle.append_row(['Número_Cotizacion', 'Código', 'Producto', 'Cantidad', 'Precio', 'Subtotal'])
         
@@ -168,11 +201,15 @@ def guardar_en_sheets(cotizacion, lista_items, total):
                 f"${item['subtotal']:,.0f}"
             ])
         
+        # Limpiar archivo temporal
+        if 'credentials' in st.secrets and os.path.exists(ruta_credenciales):
+            os.unlink(ruta_credenciales)
+        
         return True
     except Exception as e:
-        st.error(f"Error al guardar en Google Sheets: {e}")
+        st.error(f"❌ Error al guardar en Google Sheets: {e}")
         return False
-
+        
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
