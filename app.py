@@ -217,7 +217,7 @@ if 'contador_recarga' not in st.session_state:
 # ============================================================
 # INTERFAZ PRINCIPAL
 # ============================================================
-st.title("📋 Sistema de Cotizaciones PROGAS SAS ESP")
+st.title("Sistema de Cotizaciones PROGAS SAS ESP")
 st.markdown("---")
 
 df_servicios = cargar_servicios()
