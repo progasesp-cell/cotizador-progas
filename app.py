@@ -133,14 +133,14 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         return False
 
 def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets"""
+    """Guarda la cotización en Google Sheets usando diccionario directo"""
     try:
-        # Credenciales hardcodeadas como diccionario
+        # Credenciales como diccionario Python
         creds_dict = {
             "type": "service_account",
             "project_id": "cotizacion-progas",
             "private_key_id": "6a5e5f899f17945527146266dff30a765cf239a4",
-            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2wR0Sn+hQtqA\nwzOWgP+l4qbI8v/QkH+lwE6VqSBgTx48XbvAF8Xe+w/UAZ6vs1kKBR075Xz5a5tq\nB9va8Vc47Meoaz9ONL82K0q8H+TviWb4p9O41hkiz1xcVfp2/8zhtB1WvFLScYiQ\nv5x/6vOynTNVl5dNeEW9449sDrZK9v0SzUjGU7Xpqe8+s6u2t+Xmkl3fcXNiOn/E\n3aP2T6myRDeCPAGRYarr+QEqmaBN8nL8X4VbDLTbTJWw9YBwpLUCr8mb5ggoq9Z6\nKahajl8ymAXTImyZMM2P1ziwsFlEipbJEBUcBcZh6bnB3FTooX1zb2/Q2d45mkg9\n9DuoVNjrAgMBAAECggEABIbpBGtVlcUKZwVE62FTqSHHrmCWu9YyFgKTpR82HQhd\nwndLE/BV6pWcR6ybuBYja68u+NbbbFjsJcw0xjJWS/NNGHsJbY+TTzpO0JEWYfim\nTPacPKEY46l3yZ2m9UAZF3m5emf8pkitE75LYLhlOcQG0CcFZdtWFRWM/6Ebrvn8\nBG9UcMF/dNUZRK5BsKldtWfw5BQ1AsgrQLBA37A2Eagjl33tER27nygTt7T08w8W\nivyshD9YsgQzo+VUecbwBro0ktyraSzrR0CujET/IB2S3Jxr26FGDPkrwU9OxasN\nthykcd079iWji0LvY9d9hBOt4RZ8iZMRmBlNH733TQKBgQDn4GLJJZa3tNJkYuS9\nms2K9UxKsndJmS7bBUskLCO07tDH4ztxJI6VGqSs8AU/m0JBbnCBqls0JQ7BAage\nhKHmPAQ7Lh3sShCnmrSF3ZTrNbUNK+zaLWfr84YnTrO4Gw+M1ZxZasvpnCiXPN1z\n7f/M+OZz/t7825wsbirx+RVvVQKBgQDcpc99HNNf7YZjUdhZ0TxKbT0Obg9Fz2Uj\nb7o848QC7VHwKLMJ0lhY1ULu89h3zauFF8TZoFWY9u1xVmj/FyNZIzwwWLN0RrVR\nKRmZUE10JBWWwbewlzgUWqlojxJB+XvV7d9q5iMLAlpSkEtrfmcq59V44rsNgOUp\nJcUcUranPwKBgFoP9m6oUe0Sp7FkE/JtIS667iIJRXnprKBXYwMuvcO2CpPI97qP\nd24EhjfBllhJRqfBbKOAdqI/Toa6zQDlhTi20PHnjKnNbsCav0lLcl8VYjg2em2X\nu0iTMuUrlXSJ1jVedrboW0FmbQGpG16+718+wcwGD7ho2DUNqVKI68FtAoGAFd+2\nNyABcHQaq4P0n8rXYEV+FQ0iJHiP/ThZTSoDR4sBYX6XaTTaH0xdC1VPM2lHRLV7\nhVuYwMZR+bdoR0mi7nZIxD425CMSXI5nhERquUXOghiIPlBvdc0bGEt+st2pwiaH\nzJAuDyxXifHWGDz6u00qY4aOpqMNlMuyw8ELbH8CgYEAzGKYXBQWBNGSqxJxkJ4i\ngHu81ooBG4A9X09X/0/fSKJ2Zsc/Q62jPTveGAar7M7Xq4RUQD2OFhkXv4z73iXl\nkPGORbP7d+wbEejpysEGjCh8LOfipi9KJeLo2GMdp+ZzrJ2JB8BiOLEemhxVeURk\nI7SWvHlmx5pP0nogJjpbmhA=\n-----END PRIVATE KEY-----\\n",
+            "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2wR0Sn+hQtqA\nwzOWgP+l4qbI8v/QkH+lwE6VqSBgTx48XbvAF8Xe+w/UAZ6vs1kKBR075Xz5a5tq\nB9va8Vc47Meoaz9ONL82K0q8H+TviWb4p9O41hkiz1xcVfp2/8zhtB1WvFLScYiQ\nv5x/6vOynTNVl5dNeEW9449sDrZK9v0SzUjGU7Xpqe8+s6u2t+Xmkl3fcXNiOn/E\n3aP2T6myRDeCPAGRYarr+QEqmaBN8nL8X4VbDLTbTJWw9YBwpLUCr8mb5ggoq9Z6\nKahajl8ymAXTImyZMM2P1ziwsFlEipbJEBUcBcZh6bnB3FTooX1zb2/Q2d45mkg9\n9DuoVNjrAgMBAAECggEABIbpBGtVlcUKZwVE62FTqSHHrmCWu9YyFgKTpR82HQhd\nwndLE/BV6pWcR6ybuBYja68u+NbbbFjsJcw0xjJWS/NNGHsJbY+TTzpO0JEWYfim\nTPacPKEY46l3yZ2m9UAZF3m5emf8pkitE75LYLhlOcQG0CcFZdtWFRWM/6Ebrvn8\nBG9UcMF/dNUZRK5BsKldtWfw5BQ1AsgrQLBA37A2Eagjl33tER27nygTt7T08w8W\nivyshD9YsgQzo+VUecbwBro0ktyraSzrR0CujET/IB2S3Jxr26FGDPkrwU9OxasN\nthykcd079iWji0LvY9d9hBOt4RZ8iZMRmBlNH733TQKBgQDn4GLJJZa3tNJkYuS9\nms2K9UxKsndJmS7bBUskLCO07tDH4ztxJI6VGqSs8AU/m0JBbnCBqls0JQ7BAage\nhKHmPAQ7Lh3sShCnmrSF3ZTrNbUNK+zaLWfr84YnTrO4Gw+M1ZxZasvpnCiXPN1z\n7f/M+OZz/t7825wsbirx+RVvVQKBgQDcpc99HNNf7YZzUdhZ0TxKbT0Obg9Fz2Uj\nb7o848QC7VHwKLMJ0lhY1ULu89h3zauFF8TZoFWY9u1xVmj/FyNZIzwwWLN0RrVR\nKRmZUE10JBWWwbewlzgUWqlojxJB+XvV7d9q5iMLAlpSkEtrfmcq59V44rsNgOUp\nJcUcUranPwKBgFoP9m6oUe0Sp7FkE/JtIS667iIJRXnprKBXYwMuvcO2CpPI97qP\nd24EhjfBllhJRqfBbKOAdqI/Toa6zQDlhTi20PHnjKnNbsCav0lLcl8VYjg2em2X\nu0iTMuUrlXSJ1jVedrboW0FmbQGpG16+718+wcwGD7ho2DUNqVKI68FtAoGAFd+2\nNyABcHQaq4P0n8rXYEV+FQ0iJHiP/ThZTSoDR4sBYX6XaTTaH0xdC1VPM2lHRLV7\nhVuYwMZR+bdoR0mi7nZIxD425CMSXI5nhERquUXOghiIPlBvdc0bGEt+st2pwiaH\nzJAuDyxXifHWGDz6u00qY4aOpqMNlMuyw8ELbH8CgYEAzGKYXBQWBNGSqxJxkJ4i\ngHu81ooBG4A9X09X/0/fSKJ2Zsc/Q62jPTveGAar7M7Xq4RUQD2OFhkXv4z73iXl\nkPGORbP7d+wbEejpysEGjCh8LOfipi9KJeLo2GMdp+ZzrJ2JB8BiOLEemhxVeURk\nI7SWvHlmx5pP0nogJjpbmhA=\n-----END PRIVATE KEY-----\n",
             "client_email": "cotizacion-progas@cotizacion-progas.iam.gserviceaccount.com",
             "client_id": "110778774957758293885",
             "auth_uri": "https://accounts.google.com/o/oauth2/auth",
@@ -150,14 +150,9 @@ def guardar_en_sheets(cotizacion, lista_items, total):
             "universe_domain": "googleapis.com"
         }
         
-        # Crear archivo temporal con las credenciales
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            json.dump(creds_dict, f)
-            ruta_credenciales = f.name
-        
-        # Configurar credenciales
+        # Usar from_json_keyfile_dict() directamente (sin archivo temporal)
         scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
-        creds = ServiceAccountCredentials.from_json_keyfile_name(ruta_credenciales, scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
         
         # Abrir el spreadsheet por NOMBRE
@@ -197,15 +192,11 @@ def guardar_en_sheets(cotizacion, lista_items, total):
                 f"${item['subtotal']:,.0f}"
             ])
         
-        # Limpiar archivo temporal
-        if os.path.exists(ruta_credenciales):
-            os.unlink(ruta_credenciales)
-        
         return True
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
         return False
-
+        
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
