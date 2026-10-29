@@ -144,7 +144,7 @@ def guardar_en_sheets(cotizacion, lista_items, total):
             "type": "service_account",
             "project_id": "cotizacion-progas",
             "private_key_id": "6a5e5f899f17945527146266dff30a765cf239a4",
-            "private_key": "private_key": """-----BEGIN PRIVATE KEY-----
+            "private_key": """-----BEGIN PRIVATE KEY-----
 MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2wR0Sn+hQtqA
 wzOWgP+l4qbI8v/QkH+lwE6VqSBgTx48XbvAF8Xe+w/UAZ6vs1kKBR075Xz5a5tq
 B9va8Vc47Meoaz9ONL82K0q8H+TviWb4p9O41hkiz1xcVfp2/8zhtB1WvFLScYiQ
