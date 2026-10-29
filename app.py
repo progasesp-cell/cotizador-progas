@@ -348,8 +348,27 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Tabla de items (HTML real - se ve bien en móvil)
-    tabla_html = """
+    # Construir tabla HTML de forma segura
+    filas_html = ""
+    for idx, item in enumerate(st.session_state.lista_items):
+        color_fila = '#f8f9fa' if idx % 2 == 0 else 'white'
+        codigo = str(item.get('codigo', '')).replace("'", "\\'")
+        producto = str(item.get('producto', '')).replace("'", "\\'")
+        cantidad = item.get('cantidad', 0)
+        precio = item.get('precio', 0)
+        subtotal = item.get('subtotal', 0)
+        
+        filas_html += f"""
+        <tr style='background-color: {color_fila};'>
+            <td style='padding: 8px; border: 1px solid #ddd;'>{codigo}</td>
+            <td style='padding: 8px; border: 1px solid #ddd;'>{producto}</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align: center;'>{cantidad}</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${precio:,.0f}</td>
+            <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${subtotal:,.0f}</td>
+        </tr>
+        """
+    
+    tabla_completa = f"""
     <table style='width: 100%; border-collapse: collapse; font-size: 14px;'>
         <thead>
             <tr style='background-color: #1a5276; color: white;'>
@@ -358,40 +377,24 @@ else:
                 <th style='padding: 10px; border: 1px solid #ddd; text-align: center;'>Cant.</th>
                 <th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Precio Unit.</th>
                 <th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Subtotal</th>
-                <th style='padding: 10px; border: 1px solid #ddd; text-align: center;'>Acción</th>
             </tr>
         </thead>
         <tbody>
-    """
-    
-    for idx, item in enumerate(st.session_state.lista_items):
-        tabla_html += f"""
-            <tr style='background-color: {'#f8f9fa' if idx % 2 == 0 else 'white'};'>
-                <td style='padding: 8px; border: 1px solid #ddd;'>{item.get('codigo', '')}</td>
-                <td style='padding: 8px; border: 1px solid #ddd;'>{item.get('producto', '')}</td>
-                <td style='padding: 8px; border: 1px solid #ddd; text-align: center;'>{item.get('cantidad', 0)}</td>
-                <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${item.get('precio', 0):,.0f}</td>
-                <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${item.get('subtotal', 0):,.0f}</td>
-                <td style='padding: 8px; border: 1px solid #ddd; text-align: center;'>
-                    <button onclick="alert('Para eliminar usa el botón de abajo')" style='background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;'>🗑️</button>
-                </td>
-            </tr>
-        """
-    
-    tabla_html += """
+            {filas_html}
         </tbody>
     </table>
     """
     
-    st.markdown(tabla_html, unsafe_allow_html=True)
+    st.markdown(tabla_completa, unsafe_allow_html=True)
     
-    # Botones para eliminar items (debajo de la tabla)
+    # Botones para eliminar items
     st.markdown("---")
     st.markdown("**Eliminar ítems:**")
-    cols_eliminar = st.columns(len(st.session_state.lista_items))
-    for idx, (item, col) in enumerate(zip(st.session_state.lista_items, cols_eliminar)):
-        with col:
-            if st.button(f"️ {item['codigo']}", key=f"del_{idx}", help=f"Eliminar {item['producto']}"):
+    cols_eliminar = st.columns(min(len(st.session_state.lista_items), 4))
+    for idx, item in enumerate(st.session_state.lista_items):
+        col_idx = idx % 4
+        with cols_eliminar[col_idx]:
+            if st.button(f"🗑️ {item['codigo']}", key=f"del_{idx}", help=f"Eliminar {item['producto']}"):
                 st.session_state.lista_items.pop(idx)
                 st.rerun()
     
@@ -418,15 +421,14 @@ else:
             st.rerun()
     
     with col_accion2:
-        if st.button(" Generar PDF", use_container_width=True, help="Generar cotización en PDF"):
+        if st.button("📄 Generar PDF", use_container_width=True, help="Generar cotización en PDF"):
             st.session_state.accion = "generar_pdf"
             st.rerun()
     
     with col_accion3:
-        if st.button("📧 Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
+        if st.button(" Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
             st.session_state.accion = "enviar_correo"
-            st.rerun()
-            
+            st.rerun()            
 # ============================================================
 # SECCIÓN 4: GENERAR PDF Y ENVIAR
 # ============================================================
