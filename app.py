@@ -348,55 +348,23 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Construir tabla HTML de forma segura
-    filas_html = ""
-    for idx, item in enumerate(st.session_state.lista_items):
-        color_fila = '#f8f9fa' if idx % 2 == 0 else 'white'
-        codigo = str(item.get('codigo', '')).replace("'", "\\'")
-        producto = str(item.get('producto', '')).replace("'", "\\'")
-        cantidad = item.get('cantidad', 0)
-        precio = item.get('precio', 0)
-        subtotal = item.get('subtotal', 0)
-        
-        filas_html += f"""
-        <tr style='background-color: {color_fila};'>
-            <td style='padding: 8px; border: 1px solid #ddd;'>{codigo}</td>
-            <td style='padding: 8px; border: 1px solid #ddd;'>{producto}</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align: center;'>{cantidad}</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${precio:,.0f}</td>
-            <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${subtotal:,.0f}</td>
-        </tr>
-        """
+    # Crear DataFrame para la tabla (se renderiza nativamente)
+    df_tabla = pd.DataFrame(st.session_state.lista_items)
+    df_tabla['precio_fmt'] = df_tabla['precio'].apply(lambda x: f"${x:,.0f}")
+    df_tabla['subtotal_fmt'] = df_tabla['subtotal'].apply(lambda x: f"${x:,.0f}")
+    df_tabla = df_tabla[['codigo', 'producto', 'cantidad', 'precio_fmt', 'subtotal_fmt']]
+    df_tabla.columns = ['Código', 'Producto / Servicio', 'Cant.', 'Precio Unit.', 'Subtotal']
     
-    tabla_completa = f"""
-    <table style='width: 100%; border-collapse: collapse; font-size: 14px;'>
-        <thead>
-            <tr style='background-color: #1a5276; color: white;'>
-                <th style='padding: 10px; border: 1px solid #ddd; text-align: left;'>Código</th>
-                <th style='padding: 10px; border: 1px solid #ddd; text-align: left;'>Producto / Servicio</th>
-                <th style='padding: 10px; border: 1px solid #ddd; text-align: center;'>Cant.</th>
-                <th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Precio Unit.</th>
-                <th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Subtotal</th>
-            </tr>
-        </thead>
-        <tbody>
-            {filas_html}
-        </tbody>
-    </table>
-    """
-    
-    st.markdown(tabla_completa, unsafe_allow_html=True)
+    # Mostrar tabla nativa de Streamlit (responsive en móvil)
+    st.dataframe(df_tabla, use_container_width=True, hide_index=True)
     
     # Botones para eliminar items
     st.markdown("---")
     st.markdown("**Eliminar ítems:**")
-    cols_eliminar = st.columns(min(len(st.session_state.lista_items), 4))
     for idx, item in enumerate(st.session_state.lista_items):
-        col_idx = idx % 4
-        with cols_eliminar[col_idx]:
-            if st.button(f"🗑️ {item['codigo']}", key=f"del_{idx}", help=f"Eliminar {item['producto']}"):
-                st.session_state.lista_items.pop(idx)
-                st.rerun()
+        if st.button(f"🗑️ Eliminar: {item['codigo']} - {item['producto']}", key=f"del_{idx}", use_container_width=True):
+            st.session_state.lista_items.pop(idx)
+            st.rerun()
     
     # Total
     total = sum(item.get('subtotal', 0) for item in st.session_state.lista_items)
@@ -426,9 +394,10 @@ else:
             st.rerun()
     
     with col_accion3:
-        if st.button(" Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
+        if st.button("📧 Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
             st.session_state.accion = "enviar_correo"
-            st.rerun()            
+            st.rerun()
+            
 # ============================================================
 # SECCIÓN 4: GENERAR PDF Y ENVIAR
 # ============================================================
