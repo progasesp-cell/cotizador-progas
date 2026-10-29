@@ -319,75 +319,95 @@ with st.form("form_agregar_item", clear_on_submit=True):
             })
             st.success(f"✅ Agregado: {producto_sel} x{cantidad} = ${precio_exacto * cantidad:,.0f}")
             st.rerun()
-
+            
 # ============================================================
-# SECCIÓN 3: RESUMEN TIPO FACTURA
+# SECCIÓN 3: RESUMEN TIPO FACTURA (Compatible con móvil)
 # ============================================================
 st.markdown("---")
 
 if len(st.session_state.lista_items) == 0:
     st.info("Aún no has agregado ítems a la cotización.")
 else:
+    # Encabezado de la empresa
     st.markdown("""
-    <div style='background-color: #f0f2f6; padding: 20px; border-radius: 10px; margin-bottom: 20px;'>
-        <h2 style='color: #0e1117; margin: 0;'>📄 PROGAS SAS ESP</h2>
-        <p style='margin: 5px 0; color: #555;'>Empresa de Servicios Públicos</p>
-        <p style='margin: 5px 0; color: #555;'>NIT: 9018087574</p>
+    <div style='background-color: #1a5276; color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;'>
+        <h2 style='margin: 0; font-size: 24px;'>PROGAS SAS ESP</h2>
+        <p style='margin: 5px 0; font-size: 14px;'>Empresa de Servicios Públicos</p>
+        <p style='margin: 5px 0; font-size: 14px;'>NIT: 9018087574</p>
     </div>
     """, unsafe_allow_html=True)
     
-    st.markdown("## Cotización")
-    st.markdown("---")
+    # Datos de la cotización
+    st.markdown(f"""
+    <div style='background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #1a5276;'>
+        <p style='margin: 5px 0;'><strong>Número:</strong> {numero_cot}</p>
+        <p style='margin: 5px 0;'><strong>Fecha:</strong> {fecha_cot.strftime('%d/%m/%Y')}</p>
+        <p style='margin: 5px 0;'><strong>Cliente:</strong> {cliente}</p>
+        <p style='margin: 5px 0;'><strong>Correo:</strong> {correo}</p>
+        <p style='margin: 5px 0;'><strong>Elaborado por:</strong> {operario}</p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    col_datos1, col_datos2 = st.columns(2)
-    with col_datos1:
-        st.markdown(f"**Número:** {numero_cot}")
-        st.markdown(f"**Fecha:** {fecha_cot.strftime('%d/%m/%Y')}")
-    with col_datos2:
-        st.markdown(f"**Cliente:** {cliente}")
-        st.markdown(f"**Correo:** {correo}")
-    st.markdown(f"**Elaborado por:** {operario}")
-    st.markdown("---")
-    
-    col_eliminar, col_codigo, col_producto, col_cantidad, col_precio, col_subtotal = st.columns([1, 2, 6, 2, 3, 3])
-    with col_eliminar:
-        st.write("")
-    col_codigo.markdown("**Código**")
-    col_producto.markdown("**Producto / Servicio**")
-    col_cantidad.markdown("**Cant.**")
-    col_precio.markdown("**Precio Unit.**")
-    col_subtotal.markdown("**Subtotal**")
-    st.markdown("---")
+    # Tabla de items (HTML real - se ve bien en móvil)
+    tabla_html = """
+    <table style='width: 100%; border-collapse: collapse; font-size: 14px;'>
+        <thead>
+            <tr style='background-color: #1a5276; color: white;'>
+                <th style='padding: 10px; border: 1px solid #ddd; text-align: left;'>Código</th>
+                <th style='padding: 10px; border: 1px solid #ddd; text-align: left;'>Producto / Servicio</th>
+                <th style='padding: 10px; border: 1px solid #ddd; text-align: center;'>Cant.</th>
+                <th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Precio Unit.</th>
+                <th style='padding: 10px; border: 1px solid #ddd; text-align: right;'>Subtotal</th>
+                <th style='padding: 10px; border: 1px solid #ddd; text-align: center;'>Acción</th>
+            </tr>
+        </thead>
+        <tbody>
+    """
     
     for idx, item in enumerate(st.session_state.lista_items):
-        col_eliminar, col_codigo, col_producto, col_cantidad, col_precio, col_subtotal = st.columns([1, 2, 6, 2, 3, 3])
-        with col_eliminar:
-            if st.button("🗑️ Borrar", key=f"del_{idx}", help="Eliminar este ítem"):
+        tabla_html += f"""
+            <tr style='background-color: {'#f8f9fa' if idx % 2 == 0 else 'white'};'>
+                <td style='padding: 8px; border: 1px solid #ddd;'>{item.get('codigo', '')}</td>
+                <td style='padding: 8px; border: 1px solid #ddd;'>{item.get('producto', '')}</td>
+                <td style='padding: 8px; border: 1px solid #ddd; text-align: center;'>{item.get('cantidad', 0)}</td>
+                <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${item.get('precio', 0):,.0f}</td>
+                <td style='padding: 8px; border: 1px solid #ddd; text-align: right;'>${item.get('subtotal', 0):,.0f}</td>
+                <td style='padding: 8px; border: 1px solid #ddd; text-align: center;'>
+                    <button onclick="alert('Para eliminar usa el botón de abajo')" style='background-color: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;'>🗑️</button>
+                </td>
+            </tr>
+        """
+    
+    tabla_html += """
+        </tbody>
+    </table>
+    """
+    
+    st.markdown(tabla_html, unsafe_allow_html=True)
+    
+    # Botones para eliminar items (debajo de la tabla)
+    st.markdown("---")
+    st.markdown("**Eliminar ítems:**")
+    cols_eliminar = st.columns(len(st.session_state.lista_items))
+    for idx, (item, col) in enumerate(zip(st.session_state.lista_items, cols_eliminar)):
+        with col:
+            if st.button(f"️ {item['codigo']}", key=f"del_{idx}", help=f"Eliminar {item['producto']}"):
                 st.session_state.lista_items.pop(idx)
                 st.rerun()
-        with col_codigo:
-            st.write(str(item.get('codigo', '')))
-        with col_producto:
-            st.write(str(item.get('producto', '')))
-        with col_cantidad:
-            st.write(str(item.get('cantidad', 0)))
-        with col_precio:
-            st.write(f"${item.get('precio', 0):,.0f}")
-        with col_subtotal:
-            st.write(f"${item.get('subtotal', 0):,.0f}")
-        st.markdown("---")
     
+    # Total
     total = sum(item.get('subtotal', 0) for item in st.session_state.lista_items)
     
     st.markdown(
         f"""
-        <div style='background-color: #e8f5e9; padding: 15px; border-radius: 10px; margin: 20px 0;'>
-            <h3 style='color: #2e7d32; margin: 0; text-align: right;'>💰 TOTAL: ${total:,.0f}</h3>
+        <div style='background-color: #27ae60; color: white; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: right;'>
+            <h2 style='margin: 0; font-size: 28px;'>💰 TOTAL: ${total:,.0f}</h2>
         </div>
         """,
         unsafe_allow_html=True
     )
     
+    # Botones de acción
     col_accion1, col_accion2, col_accion3 = st.columns(3)
     with col_accion1:
         if st.button("🗑️ Limpiar todo", use_container_width=True, help="Eliminar TODO y comenzar nueva cotización"):
@@ -406,7 +426,7 @@ else:
         if st.button("📧 Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
             st.session_state.accion = "enviar_correo"
             st.rerun()
-
+            
 # ============================================================
 # SECCIÓN 4: GENERAR PDF Y ENVIAR
 # ============================================================
