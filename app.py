@@ -11,7 +11,6 @@ from email import encoders
 from fpdf import FPDF
 from datetime import datetime
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 import json
 import tempfile
 import os
