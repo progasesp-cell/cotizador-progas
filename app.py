@@ -132,34 +132,20 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         return False
 
 def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets con corrección automática de clave"""
+    """Guarda la cotización en Google Sheets - versión simple"""
     try:
-        # Leer credenciales desde el archivo JSON
+        import os
+        import json
+        import gspread
+        from google.oauth2 import service_account
+        
+        # Leer credenciales del archivo JSON (SIN MODIFICAR NADA)
         ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
         
         with open(ruta_credenciales, 'r') as f:
             creds_data = json.load(f)
         
-        # CORREGIR automáticamente el formato de la clave privada
-        private_key = creds_data.get('private_key', '')
-        
-        # Si tiene saltos de línea reales, convertirlos a \n literal
-        if '\n' in private_key and '\\n' not in private_key:
-            private_key = private_key.replace('\n', '\\n')
-        
-        # Asegurar que termine con \n
-        if not private_key.endswith('\\n'):
-            private_key = private_key + '\\n'
-        
-        # Asegurar que empiece correctamente
-        if not private_key.startswith('-----BEGIN PRIVATE KEY-----\\n'):
-            if '-----BEGIN PRIVATE KEY-----' in private_key:
-                idx = private_key.index('-----BEGIN PRIVATE KEY-----')
-                private_key = '-----BEGIN PRIVATE KEY-----\\n' + private_key[idx + len('-----BEGIN PRIVATE KEY-----'):]
-        
-        creds_data['private_key'] = private_key
-        
-        # Autenticar
+        # Autenticar DIRECTAMENTE con el diccionario
         creds = service_account.Credentials.from_service_account_info(
             creds_data,
             scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -206,7 +192,7 @@ def guardar_en_sheets(cotizacion, lista_items, total):
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
         return False
-
+        
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
