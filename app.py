@@ -11,8 +11,8 @@ from email import encoders
 from fpdf import FPDF
 from datetime import datetime
 import gspread
+from google.oauth2 import service_account
 import json
-import tempfile
 import os
 
 # ============================================================
@@ -24,7 +24,6 @@ CONTRASENA_APP = "oyjy rvqa fkdn tvds"
 
 OPERARIOS = [
     "Luis Villalba - Subgerente",
-    "Harold Villalba - Técnico",
     "Osaris Cruz - Gerente",
     "Guillermo Solo - Técnico",
     "Gustavo Vidal - Analista"
@@ -109,26 +108,43 @@ def generar_pdf(cotizacion, lista_items, total):
     pdf.output(nombre_archivo)
     return nombre_archivo
 
-def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets"""
+def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
     try:
-        import os
-        import json
-        import gspread
-        from google.oauth2 import service_account
-        
-        # Leer credenciales
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_REMITENTE
+        msg['To'] = destinatario
+        msg['Subject'] = asunto
+        msg.attach(MIMEText(cuerpo, 'plain'))
+        with open(archivo_pdf, "rb") as archivo:
+            part = MIMEBase('application', 'octet-stream')
+            part.set_payload(archivo.read())
+            encoders.encode_base64(part)
+            part.add_header('Content-Disposition', f"attachment; filename={archivo_pdf}")
+            msg.attach(part)
+        servidor = smtplib.SMTP('smtp.gmail.com', 587)
+        servidor.starttls()
+        servidor.login(EMAIL_REMITENTE, CONTRASENA_APP)
+        servidor.send_message(msg)
+        servidor.quit()
+        return True
+    except Exception as e:
+        st.error(f"Error al enviar correo: {e}")
+        return False
+
+def guardar_en_sheets(cotizacion, lista_items, total):
+    """Guarda la cotización en Google Sheets con corrección automática de clave"""
+    try:
+        # Leer credenciales desde el archivo JSON
         ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
         
         with open(ruta_credenciales, 'r') as f:
             creds_data = json.load(f)
         
-        # CORREGIR el formato de la clave privada
+        # CORREGIR automáticamente el formato de la clave privada
         private_key = creds_data.get('private_key', '')
         
         # Si tiene saltos de línea reales, convertirlos a \n literal
         if '\n' in private_key and '\\n' not in private_key:
-            # Reemplazar saltos de línea reales por \n literal
             private_key = private_key.replace('\n', '\\n')
         
         # Asegurar que termine con \n
@@ -137,7 +153,9 @@ def guardar_en_sheets(cotizacion, lista_items, total):
         
         # Asegurar que empiece correctamente
         if not private_key.startswith('-----BEGIN PRIVATE KEY-----\\n'):
-            private_key = '-----BEGIN PRIVATE KEY-----\\n' + private_key.replace('-----BEGIN PRIVATE KEY-----', '', 1)
+            if '-----BEGIN PRIVATE KEY-----' in private_key:
+                idx = private_key.index('-----BEGIN PRIVATE KEY-----')
+                private_key = '-----BEGIN PRIVATE KEY-----\\n' + private_key[idx + len('-----BEGIN PRIVATE KEY-----'):]
         
         creds_data['private_key'] = private_key
         
@@ -188,7 +206,7 @@ def guardar_en_sheets(cotizacion, lista_items, total):
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
         return False
-        
+
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
@@ -200,12 +218,12 @@ if 'contador_recarga' not in st.session_state:
 # ============================================================
 # INTERFAZ PRINCIPAL
 # ============================================================
-st.title("Sistema de Cotizaciones PROGAS SAS ESP")
+st.title(" Sistema de Cotizaciones")
 st.markdown("---")
 
 df_servicios = cargar_servicios()
 if df_servicios.empty:
-    st.error("❌ No se pudo cargar la lista de servicios.")
+    st.error(" No se pudo cargar la lista de servicios.")
     st.stop()
 
 col_codigo = None
@@ -302,16 +320,15 @@ with st.form("form_agregar_item", clear_on_submit=True):
             })
             st.success(f"✅ Agregado: {producto_sel} x{cantidad} = ${precio_exacto * cantidad:,.0f}")
             st.rerun()
-            
+
 # ============================================================
-# SECCIÓN 3: RESUMEN TIPO FACTURA (Compatible con móvil)
+# SECCIÓN 3: RESUMEN TIPO FACTURA
 # ============================================================
 st.markdown("---")
 
 if len(st.session_state.lista_items) == 0:
     st.info("Aún no has agregado ítems a la cotización.")
 else:
-    # Encabezado de la empresa
     st.markdown("""
     <div style='background-color: #1a5276; color: white; padding: 20px; border-radius: 10px; text-align: center; margin-bottom: 20px;'>
         <h2 style='margin: 0; font-size: 24px;'>PROGAS SAS ESP</h2>
@@ -320,7 +337,6 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Datos de la cotización
     st.markdown(f"""
     <div style='background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #1a5276;'>
         <p style='margin: 5px 0;'><strong>Número:</strong> {numero_cot}</p>
@@ -331,17 +347,14 @@ else:
     </div>
     """, unsafe_allow_html=True)
     
-    # Crear DataFrame para la tabla (se renderiza nativamente)
     df_tabla = pd.DataFrame(st.session_state.lista_items)
     df_tabla['precio_fmt'] = df_tabla['precio'].apply(lambda x: f"${x:,.0f}")
     df_tabla['subtotal_fmt'] = df_tabla['subtotal'].apply(lambda x: f"${x:,.0f}")
     df_tabla = df_tabla[['codigo', 'producto', 'cantidad', 'precio_fmt', 'subtotal_fmt']]
     df_tabla.columns = ['Código', 'Producto / Servicio', 'Cant.', 'Precio Unit.', 'Subtotal']
     
-    # Mostrar tabla nativa de Streamlit (responsive en móvil)
     st.dataframe(df_tabla, use_container_width=True, hide_index=True)
     
-    # Botones para eliminar items
     st.markdown("---")
     st.markdown("**Eliminar ítems:**")
     for idx, item in enumerate(st.session_state.lista_items):
@@ -349,7 +362,6 @@ else:
             st.session_state.lista_items.pop(idx)
             st.rerun()
     
-    # Total
     total = sum(item.get('subtotal', 0) for item in st.session_state.lista_items)
     
     st.markdown(
@@ -361,10 +373,9 @@ else:
         unsafe_allow_html=True
     )
     
-    # Botones de acción
     col_accion1, col_accion2, col_accion3 = st.columns(3)
     with col_accion1:
-        if st.button("🗑️ Limpiar todo", use_container_width=True, help="Eliminar TODO y comenzar nueva cotización"):
+        if st.button("️ Limpiar todo", use_container_width=True):
             st.session_state.lista_items = []
             if "numero_cot" in st.session_state:
                 del st.session_state["numero_cot"]
@@ -372,15 +383,15 @@ else:
             st.rerun()
     
     with col_accion2:
-        if st.button("📄 Generar PDF", use_container_width=True, help="Generar cotización en PDF"):
+        if st.button("📄 Generar PDF", use_container_width=True):
             st.session_state.accion = "generar_pdf"
             st.rerun()
     
     with col_accion3:
-        if st.button("📧 Enviar por correo", use_container_width=True, disabled=correo == "", help="Enviar cotización al correo del cliente"):
+        if st.button("📧 Enviar por correo", use_container_width=True, disabled=correo == ""):
             st.session_state.accion = "enviar_correo"
             st.rerun()
-            
+
 # ============================================================
 # SECCIÓN 4: GENERAR PDF Y ENVIAR
 # ============================================================
@@ -422,17 +433,12 @@ Cordialmente,
 {operario}
 PROGAS SAS
 """
-                    # Enviar correo
                     resultado_correo = enviar_correo(correo, asunto, cuerpo, archivo_pdf)
-                    
-                    # Guardar en Google Sheets
                     resultado_sheets = guardar_en_sheets(cotizacion, st.session_state.lista_items, total)
                     
-                    # Mostrar resultados
                     if resultado_correo and resultado_sheets:
                         st.success(f"✅ Correo enviado exitosamente a {correo}")
                         st.success(f"✅ Cotización guardada en Google Sheets")
-                        st.info("📬 El cliente recibirá la cotización y los datos están registrados.")
                     elif resultado_correo:
                         st.success(f"✅ Correo enviado a {correo}")
                         st.warning(f"⚠️ No se pudo guardar en Google Sheets")
@@ -442,7 +448,6 @@ PROGAS SAS
                     else:
                         st.error(f"❌ No se pudo enviar el correo ni guardar en Google Sheets")
             
-            # Botón para volver al resumen
             st.markdown("---")
             if st.button("🔙 Volver al resumen", use_container_width=True):
                 st.session_state.accion = None
