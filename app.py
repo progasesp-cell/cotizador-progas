@@ -133,63 +133,53 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         return False
 
 def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets"""
+    """Diagnóstico de credenciales"""
     try:
         import os
-        import gspread
-        from google.oauth2 import service_account
+        import json
         
-        # Leer credenciales desde el archivo JSON en el repositorio
+        # Leer el archivo
         ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
         
-        # Autenticar usando el archivo JSON directamente
-        creds = service_account.Credentials.from_service_account_file(
-            ruta_credenciales,
-            scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        )
+        # Verificar que existe
+        if not os.path.exists(ruta_credenciales):
+            st.error(f"❌ El archivo no existe en: {ruta_credenciales}")
+            return False
         
-        client = gspread.authorize(creds)
-        spreadsheet = client.open('Sistema de Cotizaciones')
+        # Leer y mostrar información
+        with open(ruta_credenciales, 'r') as f:
+            contenido = f.read()
         
-        # Hoja Cotizaciones
-        try:
-            hoja_cotizaciones = spreadsheet.worksheet('Cotizaciones')
-        except:
-            hoja_cotizaciones = spreadsheet.add_worksheet(title='Cotizaciones', rows=100, cols=10)
-            hoja_cotizaciones.append_row(['Número', 'Fecha', 'Cliente', 'Correo', 'Operario', 'Total', 'Estado'])
+        st.info(f"📄 Archivo leído correctamente. Tamaño: {len(contenido)} caracteres")
         
-        hoja_cotizaciones.append_row([
-            cotizacion['numero'],
-            cotizacion['fecha'],
-            cotizacion['cliente'],
-            cotizacion['correo'],
-            cotizacion['operario'],
-            f"${total:,.0f}",
-            'Guardada'
-        ])
+        # Parsear JSON
+        creds_data = json.loads(contenido)
         
-        # Hoja Detalle_Cotizaciones
-        try:
-            hoja_detalle = spreadsheet.worksheet('Detalle_Cotizaciones')
-        except:
-            hoja_detalle = spreadsheet.add_worksheet(title='Detalle_Cotizaciones', rows=500, cols=10)
-            hoja_detalle.append_row(['Número_Cotizacion', 'Código', 'Producto', 'Cantidad', 'Precio', 'Subtotal'])
+        # Mostrar información (sin la clave completa por seguridad)
+        st.info(f"🔑 project_id: {creds_data.get('project_id', 'NO ENCONTRADO')}")
+        st.info(f"📧 client_email: {creds_data.get('client_email', 'NO ENCONTRADO')}")
+        st.info(f" private_key_id: {creds_data.get('private_key_id', 'NO ENCONTRADO')}")
         
-        for item in lista_items:
-            hoja_detalle.append_row([
-                cotizacion['numero'],
-                item['codigo'],
-                item['producto'],
-                item['cantidad'],
-                f"${item['precio']:,.0f}",
-                f"${item['subtotal']:,.0f}"
-            ])
+        private_key = creds_data.get('private_key', '')
+        st.info(f"🔐 private_key longitud: {len(private_key)} caracteres")
+        st.info(f"🔐 Empieza con: {private_key[:30]}")
+        st.info(f"🔐 Termina con: {private_key[-30:]}")
         
-        return True
+        # Verificar formato
+        if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
+            st.error("❌ La clave NO empieza con '-----BEGIN PRIVATE KEY-----'")
+            return False
+        
+        if not private_key.endswith('-----END PRIVATE KEY-----\n'):
+            st.error("❌ La clave NO termina con '-----END PRIVATE KEY-----\\n'")
+            st.info(f"Termina con: {repr(private_key[-50:])}")
+            return False
+        
+        st.success("✅ El formato de la clave parece correcto")
+        return False  # Solo diagnóstico, no guarda
     except Exception as e:
-        st.error(f"❌ Error al guardar en Google Sheets: {e}")
-        return False
-        
+        st.error(f"❌ Error: {e}")
+        return False        
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
