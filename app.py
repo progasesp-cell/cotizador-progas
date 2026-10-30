@@ -135,62 +135,20 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
 def guardar_en_sheets(cotizacion, lista_items, total):
     """Guarda la cotización en Google Sheets"""
     try:
-        import json
-        from google.oauth2 import service_account
+        import os
         import gspread
+        from google.oauth2 import service_account
         
-        # Credenciales como diccionario
-        creds_dict = {
-            "type": "service_account",
-            "project_id": "cotizacion-progas",
-            "private_key_id": "6a5e5f899f17945527146266dff30a765cf239a4",
-            "private_key": """-----BEGIN PRIVATE KEY-----
-MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDH2wR0Sn+hQtqA
-wzOWgP+l4qbI8v/QkH+lwE6VqSBgTx48XbvAF8Xe+w/UAZ6vs1kKBR075Xz5a5tq
-B9va8Vc47Meoaz9ONL82K0q8H+TviWb4p9O41hkiz1xcVfp2/8zhtB1WvFLScYiQ
-v5x/6vOynTNVl5dNeEW9449sDrZK9v0SzUjGU7Xpqe8+s6u2t+Xmkl3fcXNiOn/E
-3aP2T6myRDeCPAGRYarr+QEqmaBN8nL8X4VbDLTbTJWw9YBwpLUCr8mb5ggoq9Z6
-Kahajl8ymAXTImyZMM2P1ziwsFlEipbJEBUcBcZh6bnB3FTooX1zb2/Q2d45mkg9
-9DuoVNjrAgMBAAECggEABIbpBGtVlcUKZwVE62FTqSHHrmCWu9YyFgKTpR82HQhd
-wndLE/BV6pWcR6ybuBYja68u+NbbbFjsJcw0xjJWS/NNGHsJbY+TTzpO0JEWYfim
-TPacPKEY46l3yZ2m9UAZF3m5emf8pkitE75LYLhlOcQG0CcFZdtWFRWM/6Ebrvn8
-BG9UcMF/dNUZRK5BsKldtWfw5BQ1AsgrQLBA37A2Eagjl33tER27nygTt7T08w8W
-ivyshD9YsgQzo+VUecbwBro0ktyraSzrR0CujET/IB2S3Jxr26FGDPkrwU9OxasN
-thykcd079iWji0LvY9d9hBOt4RZ8iZMRmBlNH733TQKBgQDn4GLJJZa3tNJkYuS9
-ms2K9UxKsndJmS7bBUskLCO07tDH4ztxJI6VGqSs8AU/m0JBbnCBqls0JQ7BAage
-hKHmPAQ7Lh3sShCnmrSF3ZTrNbUNK+zaLWfr84YnTrO4Gw+M1ZxZasvpnCiXPN1z
-7f/M+OZz/t7825wsbirx+RVvVQKBgQDcpc99HNNf7YZzUdhZ0TxKbT0Obg9Fz2Uj
-b7o848QC7VHwKLMJ0lhY1ULu89h3zauFF8TZoFWY9u1xVmj/FyNZIzwwWLN0RrVR
-KRmZUE10JBWWwbewlzgUWqlojxJB+XvV7d9q5iMLAlpSkEtrfmcq59V44rsNgOUp
-JcUcUranPwKBgFoP9m6oUe0Sp7FkE/JtIS667iIJRXnprKBXYwMuvcO2CpPI97qP
-d24EhjfBllhJRqfBbKOAdqI/Toa6zQDlhTi20PHnjKnNbsCav0lLcl8VYjg2em2X
-u0iTMuUrlXSJ1jVedrboW0FmbQGpG16+718+wcwGD7ho2DUNqVKI68FtAoGAFd+2
-NyABcHQaq4P0n8rXYEV+FQ0iJHiP/ThZTSoDR4sBYX6XaTTaH0xdC1VPM2lHRLV7
-hVuYwMZR+bdoR0mi7nZIxD425CMSXI5nhERquUXOghiIPlBvdc0bGEt+st2pwiaH
-zJAuDyxXifHWGDz6u00qY4aOpqMNlMuyw8ELbH8CgYEAzGKYXBQWBNGSqxJxkJ4i
-gHu81ooBG4A9X09X/0/fSKJ2Zsc/Q62jPTveGAar7M7Xq4RUQD2OFhkXv4z73iXl
-kPGORbP7d+wbEejpysEGjCh8LOfipi9KJeLo2GMdp+ZzrJ2JB8BiOLEemhxVeURk
-I7SWvHlmx5pP0nogJjpbmhA=
------END PRIVATE KEY-----
-""",
-            "client_email": "cotizacion-progas@cotizacion-progas.iam.gserviceaccount.com",
-            "client_id": "110778774957758293885",
-            "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-            "token_uri": "https://oauth2.googleapis.com/token",
-            "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-            "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/cotizacion-progas%40cotizacion-progas.iam.gserviceaccount.com"
-        }
+        # Leer credenciales desde el archivo JSON en el repositorio
+        ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
         
-        # Autenticar con google.auth
-        creds = service_account.Credentials.from_service_account_info(
-            creds_dict,
+        # Autenticar usando el archivo JSON directamente
+        creds = service_account.Credentials.from_service_account_file(
+            ruta_credenciales,
             scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
         )
         
-        # Autorizar con gspread
         client = gspread.authorize(creds)
-        
-        # Abrir spreadsheet
         spreadsheet = client.open('Sistema de Cotizaciones')
         
         # Hoja Cotizaciones
