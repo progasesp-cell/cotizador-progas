@@ -109,77 +109,86 @@ def generar_pdf(cotizacion, lista_items, total):
     pdf.output(nombre_archivo)
     return nombre_archivo
 
-def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_REMITENTE
-        msg['To'] = destinatario
-        msg['Subject'] = asunto
-        msg.attach(MIMEText(cuerpo, 'plain'))
-        with open(archivo_pdf, "rb") as archivo:
-            part = MIMEBase('application', 'octet-stream')
-            part.set_payload(archivo.read())
-            encoders.encode_base64(part)
-            part.add_header('Content-Disposition', f"attachment; filename={archivo_pdf}")
-            msg.attach(part)
-        servidor = smtplib.SMTP('smtp.gmail.com', 587)
-        servidor.starttls()
-        servidor.login(EMAIL_REMITENTE, CONTRASENA_APP)
-        servidor.send_message(msg)
-        servidor.quit()
-        return True
-    except Exception as e:
-        st.error(f"Error al enviar correo: {e}")
-        return False
-
 def guardar_en_sheets(cotizacion, lista_items, total):
-    """Diagnóstico de credenciales"""
+    """Guarda la cotización en Google Sheets"""
     try:
         import os
         import json
+        import gspread
+        from google.oauth2 import service_account
         
-        # Leer el archivo
+        # Leer credenciales
         ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
         
-        # Verificar que existe
-        if not os.path.exists(ruta_credenciales):
-            st.error(f"❌ El archivo no existe en: {ruta_credenciales}")
-            return False
-        
-        # Leer y mostrar información
         with open(ruta_credenciales, 'r') as f:
-            contenido = f.read()
+            creds_data = json.load(f)
         
-        st.info(f"📄 Archivo leído correctamente. Tamaño: {len(contenido)} caracteres")
-        
-        # Parsear JSON
-        creds_data = json.loads(contenido)
-        
-        # Mostrar información (sin la clave completa por seguridad)
-        st.info(f"🔑 project_id: {creds_data.get('project_id', 'NO ENCONTRADO')}")
-        st.info(f"📧 client_email: {creds_data.get('client_email', 'NO ENCONTRADO')}")
-        st.info(f" private_key_id: {creds_data.get('private_key_id', 'NO ENCONTRADO')}")
-        
+        # CORREGIR el formato de la clave privada
         private_key = creds_data.get('private_key', '')
-        st.info(f"🔐 private_key longitud: {len(private_key)} caracteres")
-        st.info(f"🔐 Empieza con: {private_key[:30]}")
-        st.info(f"🔐 Termina con: {private_key[-30:]}")
         
-        # Verificar formato
-        if not private_key.startswith('-----BEGIN PRIVATE KEY-----'):
-            st.error("❌ La clave NO empieza con '-----BEGIN PRIVATE KEY-----'")
-            return False
+        # Si tiene saltos de línea reales, convertirlos a \n literal
+        if '\n' in private_key and '\\n' not in private_key:
+            # Reemplazar saltos de línea reales por \n literal
+            private_key = private_key.replace('\n', '\\n')
         
-        if not private_key.endswith('-----END PRIVATE KEY-----\n'):
-            st.error("❌ La clave NO termina con '-----END PRIVATE KEY-----\\n'")
-            st.info(f"Termina con: {repr(private_key[-50:])}")
-            return False
+        # Asegurar que termine con \n
+        if not private_key.endswith('\\n'):
+            private_key = private_key + '\\n'
         
-        st.success("✅ El formato de la clave parece correcto")
-        return False  # Solo diagnóstico, no guarda
+        # Asegurar que empiece correctamente
+        if not private_key.startswith('-----BEGIN PRIVATE KEY-----\\n'):
+            private_key = '-----BEGIN PRIVATE KEY-----\\n' + private_key.replace('-----BEGIN PRIVATE KEY-----', '', 1)
+        
+        creds_data['private_key'] = private_key
+        
+        # Autenticar
+        creds = service_account.Credentials.from_service_account_info(
+            creds_data,
+            scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+        )
+        
+        client = gspread.authorize(creds)
+        spreadsheet = client.open('Sistema de Cotizaciones')
+        
+        # Hoja Cotizaciones
+        try:
+            hoja_cotizaciones = spreadsheet.worksheet('Cotizaciones')
+        except:
+            hoja_cotizaciones = spreadsheet.add_worksheet(title='Cotizaciones', rows=100, cols=10)
+            hoja_cotizaciones.append_row(['Número', 'Fecha', 'Cliente', 'Correo', 'Operario', 'Total', 'Estado'])
+        
+        hoja_cotizaciones.append_row([
+            cotizacion['numero'],
+            cotizacion['fecha'],
+            cotizacion['cliente'],
+            cotizacion['correo'],
+            cotizacion['operario'],
+            f"${total:,.0f}",
+            'Guardada'
+        ])
+        
+        # Hoja Detalle_Cotizaciones
+        try:
+            hoja_detalle = spreadsheet.worksheet('Detalle_Cotizaciones')
+        except:
+            hoja_detalle = spreadsheet.add_worksheet(title='Detalle_Cotizaciones', rows=500, cols=10)
+            hoja_detalle.append_row(['Número_Cotizacion', 'Código', 'Producto', 'Cantidad', 'Precio', 'Subtotal'])
+        
+        for item in lista_items:
+            hoja_detalle.append_row([
+                cotizacion['numero'],
+                item['codigo'],
+                item['producto'],
+                item['cantidad'],
+                f"${item['precio']:,.0f}",
+                f"${item['subtotal']:,.0f}"
+            ])
+        
+        return True
     except Exception as e:
-        st.error(f"❌ Error: {e}")
-        return False        
+        st.error(f"❌ Error al guardar en Google Sheets: {e}")
+        return False
+        
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
