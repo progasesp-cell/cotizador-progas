@@ -25,7 +25,9 @@ CONTRASENA_APP = "oyjy rvqa fkdn tvds"
 OPERARIOS = [
     "Luis Villalba - Subgerente",
     "Osaris Cruz - Gerente",
-    "Guillermo Solo - Técnico",
+    "Guillermo Solo - Administrativo",
+    "Harold Villalba - Comercial",
+    "Gregorio Mejia - Técnico",
     "Gustavo Vidal - Analista"
 ]
 
