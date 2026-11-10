@@ -134,67 +134,43 @@ def enviar_correo(destinatario, asunto, cuerpo, archivo_pdf):
         return False
 
 def guardar_en_sheets(cotizacion, lista_items, total):
-    """Guarda la cotización en Google Sheets - versión simple"""
+    """Guarda la cotización en Google Sheets vía Apps Script"""
     try:
-        import os
-        import json
-        import gspread
-        from google.oauth2 import service_account
+        import requests
         
-        # Leer credenciales del archivo JSON (SIN MODIFICAR NADA)
-        ruta_credenciales = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'credenciales.json')
+        # URL de tu Google Apps Script Web App
+        WEB_APP_URL = "1v_dyErwFsftiJXIi8IB-zoBEDI4uoH4pbbeAIyPJBtI"
         
-        with open(ruta_credenciales, 'r') as f:
-            creds_data = json.load(f)
+        payload = {
+            "numero": cotizacion['numero'],
+            "fecha": cotizacion['fecha'],
+            "cliente": cotizacion['cliente'],
+            "correo": cotizacion['correo'],
+            "operario": cotizacion['operario'],
+            "total": f"${total:,.0f}",
+            "items": [
+                {
+                    "codigo": str(item['codigo']),
+                    "producto": str(item['producto']),
+                    "cantidad": int(item['cantidad']),
+                    "precio": f"${item['precio']:,.0f}",
+                    "subtotal": f"${item['subtotal']:,.0f}"
+                }
+                for item in lista_items
+            ]
+        }
         
-        # Autenticar DIRECTAMENTE con el diccionario
-        creds = service_account.Credentials.from_service_account_info(
-            creds_data,
-            scopes=['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-        )
+        response = requests.post(WEB_APP_URL, json=payload)
+        result = response.json()
         
-        client = gspread.authorize(creds)
-        spreadsheet = client.open('Sistema de Cotizaciones')
-        
-        # Hoja Cotizaciones
-        try:
-            hoja_cotizaciones = spreadsheet.worksheet('Cotizaciones')
-        except:
-            hoja_cotizaciones = spreadsheet.add_worksheet(title='Cotizaciones', rows=100, cols=10)
-            hoja_cotizaciones.append_row(['Número', 'Fecha', 'Cliente', 'Correo', 'Operario', 'Total', 'Estado'])
-        
-        hoja_cotizaciones.append_row([
-            cotizacion['numero'],
-            cotizacion['fecha'],
-            cotizacion['cliente'],
-            cotizacion['correo'],
-            cotizacion['operario'],
-            f"${total:,.0f}",
-            'Guardada'
-        ])
-        
-        # Hoja Detalle_Cotizaciones
-        try:
-            hoja_detalle = spreadsheet.worksheet('Detalle_Cotizaciones')
-        except:
-            hoja_detalle = spreadsheet.add_worksheet(title='Detalle_Cotizaciones', rows=500, cols=10)
-            hoja_detalle.append_row(['Número_Cotizacion', 'Código', 'Producto', 'Cantidad', 'Precio', 'Subtotal'])
-        
-        for item in lista_items:
-            hoja_detalle.append_row([
-                cotizacion['numero'],
-                item['codigo'],
-                item['producto'],
-                item['cantidad'],
-                f"${item['precio']:,.0f}",
-                f"${item['subtotal']:,.0f}"
-            ])
-        
-        return True
+        if result.get('status') == 'ok':
+            return True
+        else:
+            st.error(f"❌ Error: {result.get('message', 'Desconocido')}")
+            return False
     except Exception as e:
         st.error(f"❌ Error al guardar en Google Sheets: {e}")
-        return False
-        
+        return False        
 # ============================================================
 # INICIALIZAR ESTADO
 # ============================================================
